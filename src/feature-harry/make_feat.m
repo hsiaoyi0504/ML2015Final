@@ -67,4 +67,4 @@ for file = {'train', 'test'}
     end
 end
 
-save('../data.mat', 'xa_train', 'xb_train', 'y_train', 'xa_test', 'xb_test');
+save('../../data/data.mat', 'xa_train', 'xb_train', 'y_train', 'xa_test', 'xb_test');

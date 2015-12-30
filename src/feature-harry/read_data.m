@@ -1,4 +1,5 @@
-dataDir = '/Users/harry/Desktop/ML_final_project/';
+%dataDir = '/Users/harry/Desktop/ML_final_project/';
+dataDir = input('Raw data directory? ');
 
 % enrollment_id,username,course_id
 fenrollment = fopen([dataDir, 'enrollment_', file{1}, '.csv']);
