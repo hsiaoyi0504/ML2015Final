@@ -2,10 +2,12 @@
 dataDir = input('Raw data directory? ');
 
 % enrollment_id,username,course_id
-fenrollment = fopen([dataDir, 'enrollment_', file{1}, '.csv']);
-enrollment = textscan(fenrollment, '%d%s%s', 'HeaderLines', 1, 'Delimiter', ',');
-fclose(fenrollment);
-eval(['enrollment_', file{1}, '= enrollment;']);
+for file = {'train', 'test'}
+    fenrollment = fopen([dataDir, 'enrollment_', file{1}, '.csv']);
+    enrollment = textscan(fenrollment, '%d%s%s', 'HeaderLines', 1, 'Delimiter', ',');
+    fclose(fenrollment);
+    eval(['enrollment_', file{1}, '= enrollment;']);
+end
 
 % course_id,module_id,category,children,start
 CATEGORY = {'about', 'chapter', 'combinedopenended', 'course', 'course_info', 'dictation', 'discussion', 'html', 'outlink', 'peergrading', 'problem', 'sequential', 'static_tab', 'vertical', 'video'};
@@ -39,4 +41,5 @@ drop{2} = double(drop{2});
 fclose(fdrop);
 
 %
-sample = csvread([dataDir, 'sample_train_x.csv'], 1, 0);
+sample_train = csvread([dataDir, 'sample_train_x.csv'], 1, 0);
+sample_test = csvread([dataDir, 'sample_test_x.csv'], 1, 0);

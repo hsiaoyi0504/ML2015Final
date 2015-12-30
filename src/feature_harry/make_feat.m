@@ -1,8 +1,9 @@
-SLOT = 30;
+SLOT = 120;
 
 for file = {'train', 'test'}
     eval(['log = log_', file{1}, ';']);
     eval(['enrollment = enrollment_', file{1}, ';']);
+    eval(['sample = sample_', file{1}, ';']);
 
     log_interval = [0; find(diff(log{1})); length(log{1})];
     object_map = containers.Map(object{2}, 1:length(object{1}));
@@ -10,8 +11,7 @@ for file = {'train', 'test'}
 
     e_max = find(enrollment{1} >= log{1}(end), 1);
     xa = zeros(e_max, SLOT, length(SOURCE_ORDER) + length(CATEGORY));
-    xb = zeros(e_max, 6 + length(SOURCE_ORDER) + length(CATEGORY));
-    xb(:, 1:6) = sample(1:e_max, 1:6);
+    xb = zeros(e_max, length(SOURCE_ORDER) + length(CATEGORY));
     if(strcmp(file{1}, 'train'))
         y = drop{2}(1:e_max);
     end
@@ -51,7 +51,7 @@ for file = {'train', 'test'}
         end
 
         xa(e, :, :) = permute([activity_feature, category_feature], [3, 1, 2]);
-        xb(e, 7:end) = [sum(activity_feature, 1), sum(category_feature, 1)];
+        xb(e, :) = [sum(activity_feature, 1), sum(category_feature, 1)];
         
         %{
         image = log10([activity_feature, category_feature] + 1) / 2;
@@ -59,6 +59,8 @@ for file = {'train', 'test'}
         imwrite(image, [dataDir, 'feat/', num2str(eid), '_', num2str(drop{2}(e)), '.png']);
         %}
     end
+    
+    xb = [sample(1:e_max, 1:6), xb];
 
     eval(['xa_', file{1}, '= xa;']);
     eval(['xb_', file{1}, '= xb;']);
@@ -67,4 +69,4 @@ for file = {'train', 'test'}
     end
 end
 
-save('../../data/data.mat', 'xa_train', 'xb_train', 'y_train', 'xa_test', 'xb_test');
+save(['../../data/data', num2str(SLOT), '.mat'], 'xa_train', 'xb_train', 'y_train', 'xa_test', 'xb_test');
