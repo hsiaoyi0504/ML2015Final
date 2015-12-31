@@ -1,5 +1,4 @@
-%dataDir = '/Users/harry/Desktop/ML_final_project/';
-dataDir = input('Raw data directory? ');
+dataDir = '~/Desktop/ML_final_project/';
 
 % enrollment_id,username,course_id
 for file = {'train', 'test'}
@@ -8,12 +7,14 @@ for file = {'train', 'test'}
     fclose(fenrollment);
     eval(['enrollment_', file{1}, '= enrollment;']);
 end
+clear enrollment
 
 % course_id,module_id,category,children,start
 CATEGORY = {'about', 'chapter', 'combinedopenended', 'course', 'course_info', 'dictation', 'discussion', 'html', 'outlink', 'peergrading', 'problem', 'sequential', 'static_tab', 'vertical', 'video'};
 
 fobject = fopen([dataDir, 'object.csv']);
 object = textscan(fobject, '%s%s%s%s%{uuuu-MM-dd''T''HH:mm:ss}D', 'HeaderLines', 1, 'Delimiter', ',');
+object{2} = cellfun(@(x) x(1:5), object{2}, 'UniformOutput', false);
 [~, object{3}] = ismember(object{3}, CATEGORY);
 object{5} = datenum(object{5});
 fclose(fobject);
@@ -30,9 +31,11 @@ for file = {'train', 'test'}
     log{2} = datenum(log{2});
     [~, log{3}] = ismember(log{3}, SOURCE);
     [~, log{4}] = ismember(log{4}, EVENT);
+    log{5} = cellfun(@(x) x(1:5), log{5}, 'UniformOutput', false);
     fclose(flog);
     eval(['log_', file{1}, '= log;']);
 end
+clear log
 
 % enrollment_id,dropout
 fdrop = fopen([dataDir, 'truth_train.csv']);

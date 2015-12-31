@@ -10,6 +10,9 @@ def weight(shape):
 def bias(shape):
     return tf.Variable(tf.constant(0.1, shape = shape))
 
+def pool_layer(x, w_shape, padding):
+    return tf.nn.max_pool(x, w_shape, [1, 1, 1, 1], padding)
+
 def conv_layer(x, w_shape, padding):
     return tf.nn.conv2d(x, weight(w_shape), [1, 1, 1, 1], padding) + bias(w_shape[-1:])
 

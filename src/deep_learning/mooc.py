@@ -1,24 +1,29 @@
 import numpy as np
-import scipy.io as io
 import tensorflow as tf
 import util
 import sys
 
 class Dataset(object):
     def __init__(dataset):
-        dataset.data = io.loadmat('../../data/data30.mat')
+        dataset.reset()
+
+        dataset.batch_size = 256
+        dataset.batch_per_dot = 8
+        dataset.report_interval = 5e4
+        dataset.val_interval = 1e5
+
+    def preprocess(dataset):
         for type in ['train', 'test']:
             dataset.data['size_' + type] = dataset.data['xa_' + type].shape[0]
         
         for attr in ['xa', 'xb']:
             for type in ['train', 'test']:
-                data = util.normalize(np.log10(dataset.data[attr + '_' + type] + 1))
-                data = data - np.mean(data, 0)
-                data = data / (np.std(data, 0) + 1e-9)
-                dataset.data[attr + '_' + type] = data
+                dataset.data[attr + '_' + type] = util.normalize(np.log10(dataset.data[attr + '_' + type] + 1))
         dataset.data['y0'] = np.unique(dataset.data['y_train'])
         dataset.data['y_train'] = (dataset.data['y_train'] == dataset.data['y0']).astype(float)
-
+        dataset.data['index_' + 'train' + 'train'] = 0
+        
+    def partition(dataset):
         dataset.permutation = np.random.permutation(dataset.data['size_train'])
         dataset.data['size_val'] = int(dataset.data['size_train'] * 0.05)
         dataset.data['size_train'] -= dataset.data['size_val']
@@ -26,14 +31,10 @@ class Dataset(object):
             dataset.data[attr + '_val'] = dataset.data[attr + '_train'][dataset.permutation[dataset.data['size_train']:]]
             dataset.data[attr + '_train'] = dataset.data[attr + '_train'][dataset.permutation[:dataset.data['size_train']]]
 
-        dataset.batch_size = 1024
-        dataset.batch_per_dot = 10
-        dataset.report_interval = 200000
+    def reset(dataset):
         dataset.report_num = 0
-        dataset.val_interval = 1000000
         dataset.val_num = 0
         dataset.total_size = 0
-        dataset.data['index_' + 'train' + 'train'] = 0
 
     def get_batch(dataset, phase, type):
         index = 'index_' + phase + type
@@ -58,23 +59,7 @@ class Dataset(object):
 
 class Net(object):
     def __init__(net, dataset):
-        net.xa = tf.placeholder('float', shape = [None, 30, 24])
-        net.xb = tf.placeholder('float', shape = [None, 30])
-        net.y = tf.placeholder('float', shape = [None, 2])
-        net.d = tf.placeholder('float')
-
-        net.net_cnn_0()
-
-        net.cross_entropy = - tf.reduce_sum(net.y * tf.log(net.yp))
-        net.correct_prediction = tf.equal(tf.argmax(net.yp, 1), tf.argmax(net.y, 1))
-        net.correct = tf.reduce_sum(tf.cast(net.correct_prediction, 'float'))
-        
-        net.train_step = tf.train.AdamOptimizer(1e-4).minimize(net.cross_entropy)
-        #net.sess = tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = 2, intra_op_parallelism_threads = 2))
-        net.sess = tf.Session()
         net.dataset = dataset
-        
-        net.sess.run(tf.initialize_all_variables())
 
     def train(net, count):
         phase = 'train'
@@ -122,43 +107,3 @@ class Net(object):
         print(' # %d ' % net.dataset.data['size_' + type])
 
         return yp
-    
-    def net_cnn_0(net): # data30.mat: 0.962244 / 0.882248
-        xar = tf.reshape(net.xa, [-1, 30, 24, 1])
-
-        ha = util.conv_layer(xar, [7, 24, 1, 16], 'VALID') # 24 x 1 x 16
-        ha = tf.nn.relu6(ha)
-        ha = tf.nn.max_pool(ha, [1, 2, 1, 1], [1, 2, 1, 1], 'SAME') # 12 x 1 x 16
-        ha = util.conv_layer(ha, [3, 1, 16, 32], 'VALID') # 10 x 1 x 32
-        ha = tf.nn.relu6(ha)
-        ha = tf.nn.max_pool(ha, [1, 2, 1, 1], [1, 2, 1, 1], 'SAME') # 5 x 1 x 32 
-        ha = util.conv_layer(ha, [3, 1, 32, 64], 'VALID') # 3 x 1 x 64
-        ha = tf.nn.relu6(ha)
-        ha = tf.reshape(ha, [-1, 3 * 1 * 64])
-        
-        hb = util.linear_nn(net.xb, net.d, [30, 1024])
-
-        h = tf.matmul(ha, util.weight([3 * 1 * 64, 1024])) + tf.matmul(hb, util.weight([1024, 1024])) + util.bias([1024])
-        h = util.linear_nn(h, net.d, [1024, 1024, 1024])
-        h = util.full_layer(h, [1024, 2])
-        net.yp = tf.nn.softmax(h)
-    
-    def net_cnn_1(net): # data120.mat
-        xar = tf.reshape(net.xa, [-1, 120, 24, 1])
-
-        ha = util.conv_layer(xar, [7, 24, 1, 16], 'VALID') # 24 x 1 x 16
-        ha = tf.nn.relu6(ha)
-        ha = tf.nn.max_pool(ha, [1, 2, 1, 1], [1, 2, 1, 1], 'SAME') # 12 x 1 x 16
-        ha = util.conv_layer(ha, [3, 1, 16, 32], 'VALID') # 10 x 1 x 32
-        ha = tf.nn.relu6(ha)
-        ha = tf.nn.max_pool(ha, [1, 2, 1, 1], [1, 2, 1, 1], 'SAME') # 5 x 1 x 32 
-        ha = util.conv_layer(ha, [3, 1, 32, 64], 'VALID') # 3 x 1 x 64
-        ha = tf.nn.relu6(ha)
-        ha = tf.reshape(ha, [-1, 3 * 1 * 64])
-        
-        hb = util.linear_nn(net.xb, net.d, [30, 1024])
-
-        h = tf.matmul(ha, util.weight([3 * 1 * 64, 1024])) + tf.matmul(hb, util.weight([1024, 1024])) + util.bias([1024])
-        h = util.linear_nn(h, net.d, [1024, 1024, 1024])
-        h = util.full_layer(h, [1024, 2])
-        net.yp = tf.nn.softmax(h)

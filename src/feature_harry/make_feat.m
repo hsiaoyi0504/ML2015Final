@@ -1,25 +1,25 @@
 SLOT = 120;
 
+object_map = containers.Map(object{2}, 1:length(object{1}));
+object_course_sel = find(object{3} == 4);
+
 for file = {'train', 'test'}
     eval(['log = log_', file{1}, ';']);
     eval(['enrollment = enrollment_', file{1}, ';']);
     eval(['sample = sample_', file{1}, ';']);
 
     log_interval = [0; find(diff(log{1})); length(log{1})];
-    object_map = containers.Map(object{2}, 1:length(object{1}));
-    object_course_sel = find(object{3} == 4);
-
     e_max = find(enrollment{1} >= log{1}(end), 1);
-    xa = zeros(e_max, SLOT, length(SOURCE_ORDER) + length(CATEGORY));
-    xb = zeros(e_max, length(SOURCE_ORDER) + length(CATEGORY));
+    xa = zeros(e_max, SLOT, length(SOURCE_ORDER) + length(CATEGORY), 'uint16');
+    xb = zeros(e_max, length(SOURCE_ORDER) + length(CATEGORY), 'uint32');
     if(strcmp(file{1}, 'train'))
-        y = drop{2}(1:e_max);
+        y = uint8(drop{2}(1:e_max));
     end
     for e = 1:e_max
         eid = enrollment{1}(e);
         log_range = log_interval(e) + 1:log_interval(e + 1);
         log_range_size = range(log_range) + 1;
-        if(mod(e, 10) == 0)
+        if(mod(e, 100) == 0)
             fprintf('On eid = %d / %d\n', eid, enrollment{1}(e_max));
         end
         
@@ -60,7 +60,7 @@ for file = {'train', 'test'}
         %}
     end
     
-    xb = [sample(1:e_max, 1:6), xb];
+    xb = [uint32(sample(1:e_max, 1:6)), xb];
 
     eval(['xa_', file{1}, '= xa;']);
     eval(['xb_', file{1}, '= xb;']);
