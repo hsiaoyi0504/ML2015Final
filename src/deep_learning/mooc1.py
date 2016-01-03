@@ -56,11 +56,12 @@ class Net(mooc.Net):
         hb = util.linear_nn(net.xb, net.d, [30, 1024])
 
         h = tf.matmul(ha, util.weight([15 * 1 * 128, 1024])) + tf.matmul(hb, util.weight([1024, 1024])) + util.bias([1024])
-        h = util.linear_nn(h, net.d, [1024, 1024, 1024])
+        h = tf.nn.dropout(tf.nn.relu6(h), net.d)
+        h = util.linear_nn(h, net.d, [1024, 1024])
         h = util.full_layer(h, [1024, 2])
         net.yp = tf.nn.softmax(h)
         
         net.cross_entropy = - tf.reduce_sum(net.y * tf.log(net.yp))
-        net.train_step = tf.train.AdamOptimizer(1e-4).minimize(net.cross_entropy)
+        net.train_step = tf.train.AdamOptimizer(1e-5).minimize(net.cross_entropy)
         net.sess = tf.Session()
         net.sess.run(tf.initialize_all_variables())

@@ -33,6 +33,7 @@ class Dataset(object):
 
     def reset(dataset):
         dataset.report_num = 0
+        dataset.err_total = 0
         dataset.val_num = 0
         dataset.total_size = 0
 
@@ -70,13 +71,16 @@ class Net(object):
             batch = net.dataset.get_batch(phase, type)
 
             (_, err) = net.sess.run([net.train_step, net.cross_entropy], feed_dict = {net.xa: batch[0], net.xb: batch[1], net.y: batch[2], net.d: 0.5})
+            net.dataset.err_total += err
+
             if i % net.dataset.batch_per_dot == 0:
                 sys.stdout.write('.')
                 sys.stdout.flush()
             
             if int(net.dataset.total_size / net.dataset.report_interval) != net.dataset.report_num:
+                print(' # %d (ce = %.3f)' % (net.dataset.total_size, net.dataset.err_total / net.dataset.report_interval))
                 net.dataset.report_num = int(net.dataset.total_size / net.dataset.report_interval) 
-                print(' # %d (ce = %.3f)' % (net.dataset.total_size, err / batch[0].shape[0]))
+                net.dataset.err_total = 0
 
             if int(net.dataset.total_size / net.dataset.val_interval) != net.dataset.val_num:
                 net.dataset.val_num = int(net.dataset.total_size / net.dataset.val_interval) 
