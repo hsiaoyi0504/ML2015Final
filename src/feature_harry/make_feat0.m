@@ -2,6 +2,10 @@
 % enrollment.enrollment_id, enrollment.user_id, enrollment.course_id
 % lg.enrollment_id, lg.time, lg.source, lg.event, lg.module_id
 % truth.enrollment_id, truth.dropout
+
+if(~exist('object', 'var'))
+    load('../../data/data.mat');
+end
 SLOT = 30;
 
 object.category_is_course = find(object.category_id == find(strcmp(CATEGORY, 'course')));
@@ -79,5 +83,5 @@ end
 
 y_train = truth.dropout(1:index_max);
 
-save(['../../data/data', num2str(SLOT), '.mat'], 'xa_train', 'xb_train', 'y_train', 'xa_test', 'xb_test');
+save(['../../data/feat0_', num2str(SLOT), '.mat'], 'xa_train', 'xb_train', 'y_train', 'xa_test', 'xb_test');
 
