@@ -69,3 +69,5 @@ sample_train = int32(csvread([dataDir, 'sample_train_x.csv'], 1, 0));
 sample_test = int32(csvread([dataDir, 'sample_test_x.csv'], 1, 0));
 
 clear file fid;
+
+save('../../data/data.mat');
