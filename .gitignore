@@ -1,5 +1,6 @@
 *.DS_Store
 .ipynb_checkpoints/
 data/ML_final_project
-data/data.mat
 
+src/type0-feature-parse/*.csv
+data/data.mat
