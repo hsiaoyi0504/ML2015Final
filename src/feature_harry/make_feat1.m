@@ -1,6 +1,3 @@
-% enrollment_attr / course_attr
-% enrollment_attr / user_attr
-
 if(~exist('object', 'var'))
     load('../../data/data.mat');
 end
@@ -20,219 +17,261 @@ SESS_INTERVAL_HIST_BIN = linspace(-2, 2, SESS_BIN);
 ACTIVE_PADDING = 1;
 ACTIVE_WINDOW = 2 * ACTIVE_PADDING + 1;
 
-%
-is = find(object.category_id == find(strcmp(CATEGORY, 'course')));
+% object
+is = int32(find(object.category_id == find(strcmp(CATEGORY, 'course'))));
 [~, order] = sort(object.course_id(is));
 object_course_index = is(order);
-object_course_module_num = hist(object.course_id, 1:length(COURSE_NAME))';
-
-for file = {'train', 'test'}
-    eval(['lg = lg_', file{1}, ';']);
-    eval(['enrollment = enrollment_', file{1}, ';']);
-    eval(['sample = sample_', file{1}, ';']);
-
-    %% Meta
-    % lg
-    lg_module_exist = (lg.module_id ~= 0);
-    lg_module_exist_index = MODULE_INDEX_LOOKUP(lg.module_id(lg_module_exist));
-
-    lg_source_one_hot = bsxfun(@eq, lg.source, 1:length(SOURCE));
-    lg_event_one_hot = bsxfun(@eq, lg.event, 1:length(EVENT));
-    lg_activity_one_hot = lg_source_one_hot(:, SOURCE_ORDER) & lg_event_one_hot(:, EVENT_ORDER);
+object_course_module_num = int32(hist(object.course_id, 1:length(COURSE_NAME))');
+clear is order;
     
-    lg_module_category = zeros(lg.length, 1);
-    lg_module_category(lg_module_exist) = object.category_id(lg_module_exist_index);
-    lg_object_category_one_hot = bsxfun(@eq, lg_module_category, 1:length(CATEGORY));
+% lg
+lg_module_exist = (lg.module_id ~= 0);
+lg_module_exist_index = MODULE_INDEX_LOOKUP(lg.module_id(lg_module_exist));
+
+lg_source_one_hot = bsxfun(@eq, lg.source, 1:length(SOURCE));
+lg_event_one_hot = bsxfun(@eq, lg.event, 1:length(EVENT));
+lg_activity_one_hot = lg_source_one_hot(:, SOURCE_ORDER) & lg_event_one_hot(:, EVENT_ORDER);
+clear lg_source_one_hot lg_event_one_hot;
     
-    lg_module_time = zeros(lg.length, 1);
-    lg_module_time(lg_module_exist) = object.start_time(lg_module_exist_index);
+lg_module_category = zeros(lg.length, 1);
+lg_module_category(lg_module_exist) = object.category_id(lg_module_exist_index);
+lg_object_category_one_hot = bsxfun(@eq, lg_module_category, 1:length(CATEGORY));
+clear lg_module_category;
 
-    % enrollment
-    enrollment_index_max = 100; %find(enrollment.enrollment_id >= lg.enrollment_id(end), 1);
-    enrollment_index_range = [0; find(diff(lg.enrollment_id)); lg.length];
-    enrollment_index_range = enrollment_index_range(1:enrollment_index_max + 1);
-    enrollment_course_id = enrollment.course_id(1:enrollment_index_max);
-    enrollment_course_time = object.start_time(object_course_index(enrollment_course_id));
-    enrollment_user_id = enrollment.user_id(1:enrollment_index_max);
-    enrollment_kernel = bsxfun(@eq, enrollment_user_id, enrollment_user_id') & ~eye(enrollment_index_max);
+lg_module_time = zeros(lg.length, 1);
+lg_module_time(lg_module_exist) = object.start_time(lg_module_exist_index);
+clear lg_module_exist lg_module_exist_index;
+    
+% enrollment
+enrollment_index_max = 10; %enrollment.length;
+enrollment_index_range = int32([0; find(diff(lg.enrollment_id)); lg.length]);
+enrollment_index_range = enrollment_index_range(1:enrollment_index_max + 1);
+enrollment_course_id = enrollment.course_id(1:enrollment_index_max);
+enrollment_course_time = object.start_time(object_course_index(enrollment_course_id));
+enrollment_user_id = enrollment.user_id(1:enrollment_index_max);
 
-    % truth
-    truth_dropout = truth.dropout(1:enrollment_index_max);
+% truth
+truth_dropout = [truth.dropout; false(enrollment.length_test, 1)];
+truth_dropout = int32(truth_dropout(1:enrollment_index_max)); 
 
-    %% Assignment
-    % enrollment
-    enrollment_id = enrollment.enrollment_id(1:enrollment_index_max);
-    enrollment_time = max(lg.time(enrollment_index_range(1:end - 1) + 1) - enrollment_course_time, 0);
-    enrollment_log_num = diff(enrollment_index_range);
-    enrollment_log_activity_num = zeros(enrollment_index_max, length(SOURCE_ORDER));
-    enrollment_log_object_category_num = zeros(enrollment_index_max, length(CATEGORY));
+%% FEATURE
+% enrollment
+enrollment_id = enrollment.enrollment_id(1:enrollment_index_max);
+enrollment_time = int32(max(lg.time(enrollment_index_range(1:end - 1) + 1) - enrollment_course_time, 0));
+enrollment_log_num = int32(diff(enrollment_index_range));
+enrollment_log_activity_num = zeros(enrollment_index_max, length(SOURCE_ORDER), 'int32');
+enrollment_log_object_category_num = zeros(enrollment_index_max, length(CATEGORY), 'int32');
 
-    enrollment_log_num_time = zeros(TIME_BIN, 1, enrollment_index_max);
-    enrollment_log_activity_num_time = zeros(TIME_BIN, length(SOURCE_ORDER), enrollment_index_max);
-    enrollment_log_object_category_num_time = zeros(TIME_BIN, length(CATEGORY), enrollment_index_max);
+enrollment_log_num_time = zeros(TIME_BIN, 1, enrollment_index_max, 'int32');
+enrollment_log_activity_num_time = zeros(TIME_BIN, length(SOURCE_ORDER), enrollment_index_max, 'int32');
+enrollment_log_object_category_num_time = zeros(TIME_BIN, length(CATEGORY), enrollment_index_max, 'int32');
 
-    % session
-    sess_time_hist = zeros(enrollment_index_max, SESS_BIN);
-    sess_duration_hist = zeros(enrollment_index_max, SESS_BIN);
-    sess_interval_hist = zeros(enrollment_index_max, SESS_BIN);
+% session
+sess_time_hist = zeros(enrollment_index_max, SESS_BIN, 'int32');
+sess_duration_hist = zeros(enrollment_index_max, SESS_BIN, 'int32');
+sess_interval_hist = zeros(enrollment_index_max, SESS_BIN, 'int32');
 
-    % user
-    user_course_active_num = zeros(enrollment_index_max, ACTIVE_WINDOW + 1);
-    user_course_active_log_num = zeros(enrollment_index_max, ACTIVE_WINDOW + 1);
-    user_course_active_num_time = zeros(enrollment_index_max, ACTIVE_WINDOW * TIME_BIN);
-    user_course_active_log_num_time = zeros(enrollment_index_max, ACTIVE_WINDOW * TIME_BIN);
+% user
+user_id_log_num = zeros(length(USER_NAME), 1, 'int32');
+user_id_log_activity_num = zeros(length(USER_NAME), length(SOURCE_ORDER), 'int32');
+user_id_log_object_category_num = zeros(length(USER_NAME), length(CATEGORY), 'int32');
+user_id_drop_num = zeros(length(USER_NAME), 1, 'int32');
+user_id_course_num = zeros(length(USER_NAME), 1, 'int32');
 
-    for i = 1:enrollment_index_max
-        id = enrollment_id(i);
-        sel = enrollment_index_range(i) + 1:enrollment_index_range(i + 1);
-        sel_size = enrollment_index_range(i + 1) - enrollment_index_range(i);
+user_course_active_num = zeros(enrollment_index_max, ACTIVE_WINDOW + 1, 'int32');
+user_course_active_log_num = zeros(enrollment_index_max, ACTIVE_WINDOW + 1, 'int32');
+user_course_active_num_time = zeros(enrollment_index_max, ACTIVE_WINDOW * TIME_BIN, 'int32');
+user_course_active_log_num_time = zeros(enrollment_index_max, ACTIVE_WINDOW * TIME_BIN, 'int32');
 
-        if(mod(i, 1) == 0)
-            fprintf('On enrollment id = %d / %d\n', id, enrollment_id(enrollment_index_max));
+for i = 1:enrollment_index_max
+    eid = enrollment_id(i);
+    uid = enrollment_user_id(i);
+    sel = enrollment_index_range(i) + 1:enrollment_index_range(i + 1);
+    sel_size = enrollment_index_range(i + 1) - enrollment_index_range(i);
+
+    if(mod(i, 10) == 0)
+        if(i < enrollment.length_train)
+            fprintf('On enrollment id = %d / %d (train)\n', eid, enrollment_id(enrollment_index_max));
+        else
+            fprintf('On enrollment id = %d / %d (test)\n', eid, enrollment_id(enrollment_index_max));
         end
-        
-        %% Meta
-        time = lg.time(sel);
-        time_diff = diff(time);
-        time_bin = max(ceil((time - enrollment_course_time(i)) / (30 / TIME_BIN)), 1);
-        time_bin_kernel = double(bsxfun(@eq, time_bin, 1:TIME_BIN)');
-
-        module_time = lg_module_time(sel);
-
-        %% Assignment
-        % enrollment
-        activity = lg_activity_one_hot(sel, :);
-        object_category = lg_object_category_one_hot(sel, :);
-
-        enrollment_log_activity_num(i, :) = sum(activity);
-        enrollment_log_object_category_num(i, :) = sum(object_category);
-        enrollment_log_num_time(:, :, i) = sum(time_bin_kernel, 2);
-        enrollment_log_activity_num_time(:, :, i) = time_bin_kernel * activity;
-        enrollment_log_object_category_num_time(:, :, i) = time_bin_kernel * object_category;  
-
-        % session
-        sess_time = time - module_time;
-        sess_time = max(sess_time(module_time ~= 0), 1 * SECOND);
-        sess_range = find(time_diff > SESS_IDLE_THRESH);
-        sess_duration = max(time([sess_range; sel_size]) - time([0; sess_range] + 1), 1 * SECOND);
-        sess_interval = time_diff(sess_range);
-
-        sess_time_hist(i, :) = hist(log10(sess_time), SESS_TIME_HIST_BIN);
-        sess_duration_hist(i, :) = hist(log10(sess_duration), SESS_DURATION_HIST_BIN);
-        sess_interval_hist(i, :) = hist(log10(sess_interval), SESS_INTERVAL_HIST_BIN);
-
-        % user
-        active_bin = ceil(bsxfun(@minus, time, enrollment_course_time(enrollment_kernel(i, :))') / (30 / TIME_BIN)) + ACTIVE_PADDING * TIME_BIN;
-        active_hist_small = histc(active_bin, 1:TIME_BIN:ACTIVE_WINDOW * TIME_BIN + 1, 1)';
-        active_hist_large = histc(active_bin, 1:ACTIVE_WINDOW * TIME_BIN, 1)';
-
-        user_course_active_num(enrollment_kernel(i, :), :) = user_course_active_num(enrollment_kernel(i, :), :) + (active_hist_small > 0); 
-        user_course_active_num_time(enrollment_kernel(i, :), :) = user_course_active_num_time(enrollment_kernel(i, :), :) + (active_hist_large > 0);
-        user_course_active_log_num(enrollment_kernel(i, :), :) = user_course_active_log_num(enrollment_kernel(i, :), :) + active_hist_small;
-        user_course_active_log_num_time(enrollment_kernel(i, :), :) = user_course_active_log_num_time(enrollment_kernel(i, :), :) + active_hist_large;
     end
+        
+    time = lg.time(sel);
+    time_diff = diff(time);
+    time_bin = max(ceil((time - enrollment_course_time(i)) / (30 / TIME_BIN)), 1);
+    time_bin_kernel = double(bsxfun(@eq, time_bin, 1:TIME_BIN)');
 
+    module_time = lg_module_time(sel);
+    
     % enrollment
-    enrollment_log_num_time = permute(enrollment_log_num_time, [3, 1, 2]);
-    enrollment_log_activity_num_time = permute(enrollment_log_activity_num_time, [3, 1, 2]);
-    enrollment_log_object_category_num_time = permute(enrollment_log_object_category_num_time, [3, 1, 2]);
+    activity = lg_activity_one_hot(sel, :);
+    object_category = lg_object_category_one_hot(sel, :);
+
+    enrollment_log_activity_num(i, :) = sum(activity);
+    enrollment_log_object_category_num(i, :) = sum(object_category);
+    enrollment_log_num_time(:, :, i) = sum(time_bin_kernel, 2);
+    enrollment_log_activity_num_time(:, :, i) = int32(time_bin_kernel * activity);
+    enrollment_log_object_category_num_time(:, :, i) = int32(time_bin_kernel * object_category);
+    
+    % session
+    sess_time = time - module_time;
+    sess_time = max(sess_time(module_time ~= 0), 1 * SECOND);
+    sess_range = find(time_diff > SESS_IDLE_THRESH);
+    sess_duration = max(time([sess_range; sel_size]) - time([0; sess_range] + 1), 1 * SECOND);
+    sess_interval = time_diff(sess_range);
+
+    sess_time_hist(i, :) = hist(log10(sess_time), SESS_TIME_HIST_BIN);
+    sess_duration_hist(i, :) = hist(log10(sess_duration), SESS_DURATION_HIST_BIN);
+    sess_interval_hist(i, :) = hist(log10(sess_interval), SESS_INTERVAL_HIST_BIN);
 
     % user
-    user_kernel = double(bsxfun(@eq, enrollment_id, enrollment_id'));
-
-    user_id = enrollment_user_id;
-    user_log_num = user_kernel * enrollment_log_num;
-    user_log_activity_num = user_kernel * enrollment_log_activity_num;
-    user_log_object_category_num = user_kernel * enrollment_log_object_category_num;
-    user_course_num = sum(user_kernel, 2);
-    user_course_active_num = user_course_active_num(:, 1:end - 1);
-    user_course_active_log_num = user_course_active_log_num(:, 1:end - 1);
-    user_course_drop_num = user_kernel * truth_dropout; 
-
-    % course
-    course_kernel = double(bsxfun(@eq, enrollment_course_id, 1:length(COURSE_NAME))');
-    course_id_log_num = course_kernel * enrollment_log_num;
-    course_id_log_activity_num = course_kernel * enrollment_log_activity_num;
-    course_id_log_object_category_num = course_kernel * enrollment_log_object_category_num;
-    course_id_user_num = hist(enrollment_course_id, 1:length(COURSE_NAME))';
-    course_id_user_drop_num = hist(enrollment_course_id(truth_dropout), 1:length(COURSE_NAME))';
-
-    course_id = enrollment_course_id;
-    course_module_num = object_course_module_num(course_id);
-    course_log_num = course_id_log_num(course_id, :);
-    course_log_activity_num = course_id_log_activity_num(course_id, :);
-    course_log_object_category_num = course_id_log_object_category_num(course_id, :);
-    course_user_num = course_id_user_num(course_id);
-    course_user_drop_num = course_id_user_drop_num(course_id);
-
-    % finalize
-    x1 = [...
-        enrollment_id, ...
-        enrollment_time, ...
-        enrollment_log_num, ...
-        enrollment_log_num ./ user_log_num, ...
-        enrollment_log_num ./ course_log_num, ...
-        enrollment_log_activity_num, ...
-        bsxfun(@rdivide, enrollment_log_activity_num, user_log_num), ...
-        bsxfun(@rdivide, enrollment_log_activity_num, course_log_num), ...
-        enrollment_log_object_category_num, ...
-        bsxfun(@rdivide, enrollment_log_object_category_num, user_log_num), ...
-        bsxfun(@rdivide, enrollment_log_object_category_num, course_log_num), ...
-        ...
-        sess_time_hist, ...
-        sess_duration_hist, ...
-        sess_interval_hist, ...
-        ...
-        user_id, ...
-        user_log_num, ...
-        user_log_activity_num, ...
-        bsxfun(@rdivide, user_log_activity_num, user_log_num), ...
-        user_log_object_category_num, ...
-        bsxfun(@rdivide, user_log_object_category_num, user_log_num), ...
-        user_course_num, ...
-        user_course_active_num, ...
-        bsxfun(@rdivide, user_course_active_num, user_course_num), ...
-        user_course_active_log_num, ...
-        bsxfun(@rdivide, user_course_active_log_num, user_log_num), ...
-        user_course_drop_num, ...
-        user_course_drop_num ./ user_course_num, ...
-        ...
-        course_id, ...
-        course_module_num, ...
-        course_log_num, ...
-        course_log_activity_num, ...
-        bsxfun(@rdivide, course_log_activity_num, course_log_num), ...
-        course_log_object_category_num, ...
-        bsxfun(@rdivide, course_log_object_category_num, course_log_num), ...
-        course_user_num, ...
-        course_user_drop_num, ...
-        course_user_drop_num ./ course_user_num, ...
-    ];
+    user_same = (uid == enrollment_user_id);
+    user_same(i) = false;
+    active_bin = ceil(bsxfun(@minus, time, enrollment_course_time(user_same)') / (30 / TIME_BIN)) + ACTIVE_PADDING * TIME_BIN;
+    active_hist_small = int32(histc(active_bin, 1:TIME_BIN:ACTIVE_WINDOW * TIME_BIN + 1, 1)');
+    active_hist_large = int32(histc(active_bin, 1:ACTIVE_WINDOW * TIME_BIN, 1)');
     
-    x2 = cat(3, ...
-        enrollment_log_num_time, ...
-        bsxfun(@rdivide, enrollment_log_num_time, user_log_num), ...
-        bsxfun(@rdivide, enrollment_log_num_time, course_log_num), ...
-        enrollment_log_activity_num_time, ...
-        bsxfun(@rdivide, enrollment_log_activity_num_time, user_log_num), ...
-        bsxfun(@rdivide, enrollment_log_activity_num_time, course_log_num), ...
-        enrollment_log_object_category_num_time, ...
-        bsxfun(@rdivide, enrollment_log_object_category_num_time, user_log_num), ...
-        bsxfun(@rdivide, enrollment_log_object_category_num_time, course_log_num) ...
-    );
+    user_id_log_num(uid) = user_id_log_num(uid) + enrollment_log_num(i);
+    user_id_log_activity_num(uid, :) = user_id_log_activity_num(uid, :) + enrollment_log_activity_num(i, :);
+    user_id_log_object_category_num(uid, :) = user_id_log_object_category_num(uid, :) + enrollment_log_object_category_num(i, :);
+    user_id_course_num(uid) = user_id_course_num(uid) + 1;
+    user_id_drop_num(uid) = user_id_drop_num(uid) + truth_dropout(i);
 
-    x3 = cat(3, ...
-        user_course_active_num_time, ...
-        bsxfun(@rdivide, user_course_active_num_time, user_course_num), ...
-        user_course_active_log_num_time, ...
-        bsxfun(@rdivide, user_course_active_num_time, user_log_num) ...
-    );
-    
-    for i = 1:3
-        eval(['x', num2str(i), '_', file{1}, '= x', num2str(i), ';']);
-    end
+    user_course_active_num(user_same, :) = user_course_active_num(user_same, :) + int32(active_hist_small > 0); 
+    user_course_active_num_time(user_same, :) = user_course_active_num_time(user_same, :) + int32(active_hist_large > 0);
+    user_course_active_log_num(user_same, :) = user_course_active_log_num(user_same, :) + active_hist_small;
+    user_course_active_log_num_time(user_same, :) = user_course_active_log_num_time(user_same, :) + active_hist_large;
 end
 
-y_train = truth_dropout;
+clear i eid uid sel sel_size;
+clear time time_diff time_bin time_bin_kernel module_time;
+clear activity object_category;
+clear sess_time sess_range sess_duration sess_interval;
+clear user_same active_bin active_hist_small active_hist_large;
 
-save(['../../data/feat1_.mat'], 'x1_train', 'x2_train', 'x3_train', 'y_train', 'x1_test', 'x2_test', 'x3_test');
+% enrollment
+enrollment_log_num_time = permute(enrollment_log_num_time, [3, 1, 2]);
+enrollment_log_activity_num_time = permute(enrollment_log_activity_num_time, [3, 1, 2]);
+enrollment_log_object_category_num_time = permute(enrollment_log_object_category_num_time, [3, 1, 2]);
+
+% user
+user_id = enrollment_user_id;
+user_log_num = user_id_log_num(user_id); 
+user_log_activity_num = user_id_log_activity_num(user_id, :);
+user_log_object_category_num = user_id_log_object_category_num(user_id, :);
+user_course_num = user_id_course_num(user_id); 
+user_course_active_num = user_course_active_num(:, 1:end - 1);
+user_course_active_log_num = user_course_active_log_num(:, 1:end - 1);
+user_course_drop_num = user_id_drop_num(user_id);
+clear user_id_*;
+    
+% course
+course_kernel = double(bsxfun(@eq, enrollment_course_id, 1:length(COURSE_NAME))');
+course_id_log_num = int32(course_kernel * double(enrollment_log_num));
+course_id_log_activity_num = int32(course_kernel * double(enrollment_log_activity_num));
+course_id_log_object_category_num = int32(course_kernel * double(enrollment_log_object_category_num));
+course_id_user_num = int32(hist(enrollment_course_id, 1:length(COURSE_NAME))');
+course_id_user_drop_num = int32(course_kernel * double(truth_dropout)); 
+
+course_id = enrollment_course_id;
+course_module_num = object_course_module_num(course_id);
+course_log_num = course_id_log_num(course_id, :);
+course_log_activity_num = course_id_log_activity_num(course_id, :);
+course_log_object_category_num = course_id_log_object_category_num(course_id, :);
+course_user_num = course_id_user_num(course_id);
+course_user_drop_num = course_id_user_drop_num(course_id);
+clear course_kernel course_id_*;
+
+clear object_course_index object_course_module_num;
+clear lg_activity_one_hot lg_object_category_one_hot lg_module_time;
+clear enrollment_index_max enrollment_index_range enrollment_course_id enrollment_course_time enrollment_user_id;
+
+clear COURSE_NAME COURSE_INDEX_LOOKUP MODULE_NAME MODULE_INDEX_LOOKUP CATEGORY USER_NAME SOURCE EVENT SOURCE_ORDER EVENT_ORDER;
+clear HOUR MINUTE SECOND TIME_BIN SESS_BIN SESS_IDLE_THRESH SESS_TIME_HIST_BIN SESS_DURATION_HIST_BIN SESS_INTERVAL_HIST_BIN ACTIVE_PADDING ACTIVE_WINDOW;
+
+normalize = @(x, y) bsxfun(@rdivide, single(x), single(y) + 1e-9);
+feat1.length_train = enrollment.length_train;
+feat1.length_test = enrollment.length_test;
+feat1.length = feat1.length_train + feat1.length_test;
+clear object lg enrollment truth;
+
+% Finalize
+feat1.x1_int = [...
+    enrollment_id, ...
+    enrollment_time, ...
+    enrollment_log_num, ...
+    enrollment_log_activity_num, ...
+    enrollment_log_object_category_num, ...
+    ...
+    sess_time_hist, ...
+    sess_duration_hist, ...
+    sess_interval_hist, ...
+    ...
+    user_id, ...
+    user_log_num, ...
+    user_log_activity_num, ...
+    user_log_object_category_num, ...
+    user_course_num, ...
+    user_course_active_num, ...
+    user_course_active_log_num, ...
+    user_course_drop_num, ...
+    ...
+    course_id, ...
+    course_module_num, ...
+    course_log_num, ...
+    course_log_activity_num, ...
+    course_log_object_category_num, ...
+    course_user_num, ...
+    course_user_drop_num ...
+];
+feat1.x1_float = [
+    normalize(enrollment_log_num, user_log_num), ...
+    normalize(enrollment_log_num, course_log_num), ...
+    normalize(enrollment_log_activity_num, user_log_num), ...
+    normalize(enrollment_log_activity_num, course_log_num), ...
+    normalize(enrollment_log_object_category_num, user_log_num), ...
+    normalize(enrollment_log_object_category_num, course_log_num), ...
+    normalize(user_log_activity_num, user_log_num), ...
+    normalize(user_log_object_category_num, user_log_num), ...
+    normalize(user_course_active_num, user_course_num), ...
+    normalize(user_course_active_log_num, user_log_num), ...
+    normalize(user_course_drop_num, user_course_num) ...
+    normalize(course_log_activity_num, course_log_num), ...
+    normalize(course_log_object_category_num, course_log_num), ...
+    normalize(course_user_drop_num, course_user_num) ...
+];
+clear enrollment_id enrollment_time enrollment_log_num enrollment_log_activity_num enrollment_log_object_category_num;
+clear sess_time_hist sess_duration_hist sess_interval_hist;
+clear user_id user_log_activity_num user_log_object_category_num user_course_active_num user_course_active_log_num user_course_drop_num;
+clear course_id course_module_num course_log_activity_num course_log_object_category_num course_user_num course_user_drop_num;
+
+feat1.x2_int = cat(3, ...
+    enrollment_log_num_time, ...
+    enrollment_log_activity_num_time, ...
+    enrollment_log_object_category_num_time ...
+);
+feat1.x2_float = cat(3, ...
+    normalize(enrollment_log_num_time, user_log_num), ...
+    normalize(enrollment_log_num_time, course_log_num), ...
+    normalize(enrollment_log_activity_num_time, user_log_num), ...
+    normalize(enrollment_log_activity_num_time, course_log_num), ...
+    normalize(enrollment_log_object_category_num_time, user_log_num), ...
+    normalize(enrollment_log_object_category_num_time, course_log_num) ...
+);
+clear enrollment_log_num_time enrollment_log_activity_num_time enrollment_log_object_category_num_time course_log_num;
+
+feat1.x3_int = cat(3, ...
+    user_course_active_num_time, ...
+    user_course_active_log_num_time ...
+);
+feat1.x3_float = cat(3, ...
+    normalize(user_course_active_num_time, user_course_num), ...
+    normalize(user_course_active_num_time, user_log_num) ...
+);
+clear user_course_active_num_time user_course_active_log_num_time user_course_num user_log_num;
+
+feat1.y = truth_dropout;
+clear truth_dropout;
+
+save(['../../data/feat1.mat'], '-struct', 'feat1'); 

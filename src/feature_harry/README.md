@@ -4,11 +4,17 @@ I am too lazy to write this...
 
 # `feat1` specifications
 -
-Features are collected in:
 
-* `x1`(`#enrollment` × `286`): Non-time-expanded
-* `x2`(`#enrollment` × `30` × `75`): Time-expanded / Enrollment
-* `x3`(`#enrollment` × `90` × `4`): Time-expanded / User
+* `length`: `120542`
+* `length_train`: `96434`
+* `length_test`: `24108`
+* `x1_int`(`120542` × `180`): Non-time-expanded
+* `x1_float`(`120542` × `106`): Non-time-expanded
+* `x2_int`(`120542` × `30` × `25`): Time-expanded / Enrollment
+* `x2_float`(`120542` × `30` × `50`): Time-expanded / Enrollment
+* `x3_int`(`120542` × `90` × `2`): Time-expanded / User
+* `x3_float`(`120542` × `90` × `2`): Time-expanded / User
+* `y`(`120542` × `1`): Dropout
 
 Resulting in `2896` dimensions in total.
 
