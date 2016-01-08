@@ -7,7 +7,7 @@ class Dataset(mooc.Dataset):
     def __init__(dataset):
         mooc.Dataset.__init__(dataset)
 
-        dataset.data = io.loadmat('../../data/data30.mat')
+        dataset.data = io.loadmat('../../data/feat0_30.mat')
         dataset.preprocess()
         dataset.partition()
         
