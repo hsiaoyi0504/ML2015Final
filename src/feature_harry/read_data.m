@@ -4,8 +4,9 @@ dataDir = '~/Desktop/ML_final_project/';
 fid = fopen([dataDir, 'object.csv']);
 object_cell = textscan(fid, '%s%s%s%s%{uuuu-MM-dd''T''HH:mm:ss}D', 'HeaderLines', 1, 'Delimiter', ',');
 
-[COURSE_NAME, COURSE_LOOKUP, object.course_id] = unique(object_cell{1}); object.course_id = int8(object.course_id);
-[MODULE_NAME, MODULE_LOOKUP, object.module_id] = unique(object_cell{2}); object.module_id = int16(object.module_id);
+object.length = length(object_cell{1});
+[COURSE_NAME, COURSE_INDEX_LOOKUP, object.course_id] = unique(object_cell{1}); object.course_id = int8(object.course_id);
+[MODULE_NAME, MODULE_INDEX_LOOKUP, object.module_id] = unique(object_cell{2}); object.module_id = int16(object.module_id);
 CATEGORY = {'about', 'chapter', 'combinedopenended', 'course', 'course_info', 'dictation', 'discussion', 'html', 'outlink', 'peergrading', 'problem', 'sequential', 'static_tab', 'vertical', 'video'};
 [~, object.category_id] = ismember(object_cell{3}, CATEGORY); object.category_id = int8(object.category_id);
 object.start_time = datenum(object_cell{5});
@@ -18,6 +19,7 @@ for file = {'train', 'test'}
     fid = fopen([dataDir, 'enrollment_', file{1}, '.csv']);
     enrollment_cell = textscan(fid, '%d%s%s', 'HeaderLines', 1, 'Delimiter', ',');
 
+    enrollment.length = length(enrollment_cell{1});
     enrollment.enrollment_id = enrollment_cell{1};
     enrollment.user_id = enrollment_cell{2};
     [~, enrollment.course_id] = ismember(enrollment_cell{3}, COURSE_NAME); enrollment.course_id = int8(enrollment.course_id);
@@ -42,6 +44,7 @@ for file = {'train', 'test'}
     fid = fopen([dataDir, 'log_', file{1}, '.csv']);
     log_cell = textscan(fid, '%d%{uuuu-MM-dd''T''HH:mm:ss}D%s%s%s', 'HeaderLines', 1, 'Delimiter', ',');
 
+    lg.length = length(log_cell{1});
     lg.enrollment_id = log_cell{1};
     lg.time = datenum(log_cell{2});
     [~, lg.source] = ismember(log_cell{3}, SOURCE); lg.source = int8(lg.source);
