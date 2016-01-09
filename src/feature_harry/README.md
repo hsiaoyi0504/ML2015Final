@@ -8,15 +8,15 @@ I am too lazy to write this...
 * `length`: `120542`
 * `length_train`: `96434`
 * `length_test`: `24108`
-* `x1_int`(`120542` × `180`): Non-time-expanded
-* `x1_float`(`120542` × `106`): Non-time-expanded
-* `x2_int`(`120542` × `30` × `25`): Time-expanded / Enrollment
-* `x2_float`(`120542` × `30` × `50`): Time-expanded / Enrollment
+* `x1_int`(`120542` × `150`): Non-time-expanded
+* `x1_float`(`120542` × `66`): Non-time-expanded
+* `x2_int`(`120542` × `30` × `15`): Time-expanded / Enrollment
+* `x2_float`(`120542` × `30` × `30`): Time-expanded / Enrollment
 * `x3_int`(`120542` × `90` × `2`): Time-expanded / User
 * `x3_float`(`120542` × `90` × `2`): Time-expanded / User
 * `y`(`120542` × `1`): Dropout
 
-Resulting in `2896` dimensions in total.
+Resulting in `1926` dimensions in total.
 
 ```Matlab
 feat1.x1_int = [...
@@ -24,47 +24,47 @@ feat1.x1_int = [...
     enrollment_time, ... % 1
     enrollment_log_num, ... % 1
     enrollment_log_activity_num, ... % 9
-    enrollment_log_object_category_num, ... % 15
-    ... % 27
+    enrollment_log_object_category_num, ... % 5
+    ... % 17
     sess_time_hist, ... % 30
     sess_duration_hist, ... % 30
     sess_interval_hist, ... % 30
-    ... % 117
+    ... % 107
     user_id, ... % 1
     user_log_num, ... % 1
     user_log_activity_num, ... % 9
-    user_log_object_category_num, ... % 15
+    user_log_object_category_num, ... % 5
     user_course_num, ... % 1
     user_course_active_num, ... % 3
     user_course_active_log_num, ... % 3
     user_course_drop_num, ... % 1
-    ... % 151
+    ... % 131
     course_id, ... % 1
     course_module_num, ... % 1
     course_log_num, ... % 1
     course_log_activity_num, ... % 9
-    course_log_object_category_num, ... % 15
+    course_log_object_category_num, ... % 5
     course_user_num, ... % 1
     course_user_drop_num ... % 1
-]; % 180
+]; % 150
 feat1.x1_float = [
     normalize(enrollment_log_num, user_log_num), ... % 1
     normalize(enrollment_log_num, course_log_num), ... % 1
     normalize(enrollment_log_activity_num, user_log_num), ... % 9
     normalize(enrollment_log_activity_num, course_log_num), ... % 9
-    normalize(enrollment_log_object_category_num, user_log_num), ... % 15
-    normalize(enrollment_log_object_category_num, course_log_num), ... % 15
-    ... % 50
+    normalize(enrollment_log_object_category_num, user_log_num), ... % 5
+    normalize(enrollment_log_object_category_num, course_log_num), ... % 5
+    ... % 30
     normalize(user_log_activity_num, user_log_num), ... % 9
-    normalize(user_log_object_category_num, user_log_num), ... % 15
+    normalize(user_log_object_category_num, user_log_num), ... % 5
     normalize(user_course_active_num, user_course_num), ... % 3
     normalize(user_course_active_log_num, user_log_num), ... % 3
     normalize(user_course_drop_num, user_course_num) ... % 1
-    ... % 81
+    ... % 51
     normalize(course_log_activity_num, course_log_num), ... % 9
-    normalize(course_log_object_category_num, course_log_num), ... % 15
+    normalize(course_log_object_category_num, course_log_num), ... % 5
     normalize(course_user_drop_num, course_user_num) ... % 1
-];
+]; % 66
 
 feat1.x2_int = cat(3, ...
     enrollment_log_num_time, ...
@@ -95,7 +95,7 @@ feat1.y = truth_dropout;
 The items are specified below:
 
 * Non-time-expanded
-    * Enrollment (`77`)
+    * Enrollment 
         * `enrollment_id`(`1`): trivial as shit
         * `enrollment_time`(`1`): the time of first log since the course released
 
@@ -114,10 +114,10 @@ The items are specified below:
             * `server_nagivate`
             * `server_problem`
             * `server_wiki`
-        * `enrollment_log_{object_category}_num{norm_enrollment}`(`3` × `15`): `object_category` specified below
+        * `enrollment_log_{object_category}_num{norm_enrollment}`(`3` × `5`): `object_category` specified below
             * `about`
             * `chapter`
-            * `combinedopenendㄘed`
+            * `combinedopenended`
             * `course`
             * `course_info`
             * `dictation`
@@ -135,7 +135,7 @@ The items are specified below:
         * `sess_duration_hist`(`SESS_BIN`): the histogram of the duration of log sessions from this enrollment
         * `sess_interval_hist`(`SESS_BIN`): the histogram of the interval of log sessions from this enrollment
 
-    * User (`65`)
+    * User 
         * `user_id`(`1`): trivial as fuck
 
         -
@@ -143,14 +143,14 @@ The items are specified below:
         * `user_log_{activity}_num{norm_user}`(`2` × `9`): number of specified `activity` of logs summed over all enrollment related to this user, `norm_user` specified below
             * ` `: no normalization
             * `/user`: normalized by user
-        * `user_log_{object_category}_num{norm_user}`(`2` × `15`): number of specified `object_category` of logs summed over all enrollment related to this user
+        * `user_log_{object_category}_num{norm_user}`(`2` × `5`): number of specified `object_category` of logs summed over all enrollment related to this user
         
         -
         * `user_course_num`(`1`): number of courses taken by this user
         * `user_course_active_num{norm_user}@period`(`ACTIVE_WINDOW` × `2` × `1`): number of other active courses before, during, and after this enrollment
         * `user_course_active_log_num{norm_user}@period`(`ACTIVE_WINDOW` × `2` × `1`)
         * `user_course_drop_num{norm_user}`(`2` × `1`): number of OTHER courses dropped by the user
-    * Course (`54`)
+    * Course 
         * `course_id`(`1`): trivial, right?
         * `course_module_num`(`1`): number of modules in this course
 
@@ -160,7 +160,7 @@ The items are specified below:
             * ` `: no normalization
             * `/course`: normalized by course
 
-        * `course_log_{object_category}_num{norm_course}`(`2` × `15`): number of specified `object_category` of logs summed over all enrollment related to this course
+        * `course_log_{object_category}_num{norm_course}`(`2` × `5`): number of specified `object_category` of logs summed over all enrollment related to this course
 
         -
         * `course_user_num`(`1`): number of users taking this course
@@ -170,7 +170,7 @@ The items are specified below:
     * Enrollment (`75` × `TIME_BIN`)
         * `enrollment_log_num{norm_enrollment}@time`(`TIME_BIN` × `3` × `1`): `enrollment_log_num{norm_enrollment}` expanded to `TIME_BIN` uniform time bins
         * `enrollment_log_{activity}_num{norm_enrollment}@time`(`TIME_BIN` × `3` × `9`)
-        * `enrollment_log_{object_category}_num{norm_enrollment}@time`(`TIME_BIN` × `3` × `15`)
+        * `enrollment_log_{object_category}_num{norm_enrollment}@time`(`TIME_BIN` × `3` × `5`)
     * User (`4` × `ACTIVE_WINDOW` × `TIME_BIN`)
         * `user_course_active_num{norm_user}@period@time`(`TIME_BIN` × `ACTIVE_WINDOW` × `2` × `1`)
         * `user_course_active_log_num{norm_user}@period@time`(`TIME_BIN` × `ACTIVE_WINDOW` × `2` × `1`)
