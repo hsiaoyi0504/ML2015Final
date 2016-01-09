@@ -18,6 +18,80 @@ I am too lazy to write this...
 
 Resulting in `2896` dimensions in total.
 
+```Matlab
+feat1.x1_int = [...
+    enrollment_id, ... % 1
+    enrollment_time, ... % 1
+    enrollment_log_num, ... % 1
+    enrollment_log_activity_num, ... % 9
+    enrollment_log_object_category_num, ... % 15
+    ... % 27
+    sess_time_hist, ... % 30
+    sess_duration_hist, ... % 30
+    sess_interval_hist, ... % 30
+    ... % 117
+    user_id, ... % 1
+    user_log_num, ... % 1
+    user_log_activity_num, ... % 9
+    user_log_object_category_num, ... % 15
+    user_course_num, ... % 1
+    user_course_active_num, ... % 3
+    user_course_active_log_num, ... % 3
+    user_course_drop_num, ... % 1
+    ... % 151
+    course_id, ... % 1
+    course_module_num, ... % 1
+    course_log_num, ... % 1
+    course_log_activity_num, ... % 9
+    course_log_object_category_num, ... % 15
+    course_user_num, ... % 1
+    course_user_drop_num ... % 1
+]; % 180
+feat1.x1_float = [
+    normalize(enrollment_log_num, user_log_num), ... % 1
+    normalize(enrollment_log_num, course_log_num), ... % 1
+    normalize(enrollment_log_activity_num, user_log_num), ... % 9
+    normalize(enrollment_log_activity_num, course_log_num), ... % 9
+    normalize(enrollment_log_object_category_num, user_log_num), ... % 15
+    normalize(enrollment_log_object_category_num, course_log_num), ... % 15
+    ... % 50
+    normalize(user_log_activity_num, user_log_num), ... % 9
+    normalize(user_log_object_category_num, user_log_num), ... % 15
+    normalize(user_course_active_num, user_course_num), ... % 3
+    normalize(user_course_active_log_num, user_log_num), ... % 3
+    normalize(user_course_drop_num, user_course_num) ... % 1
+    ... % 81
+    normalize(course_log_activity_num, course_log_num), ... % 9
+    normalize(course_log_object_category_num, course_log_num), ... % 15
+    normalize(course_user_drop_num, course_user_num) ... % 1
+];
+
+feat1.x2_int = cat(3, ...
+    enrollment_log_num_time, ...
+    enrollment_log_activity_num_time, ...
+    enrollment_log_object_category_num_time ...
+);
+feat1.x2_float = cat(3, ...
+    normalize(enrollment_log_num_time, user_log_num), ...
+    normalize(enrollment_log_num_time, course_log_num), ...
+    normalize(enrollment_log_activity_num_time, user_log_num), ...
+    normalize(enrollment_log_activity_num_time, course_log_num), ...
+    normalize(enrollment_log_object_category_num_time, user_log_num), ...
+    normalize(enrollment_log_object_category_num_time, course_log_num) ...
+);
+
+feat1.x3_int = cat(3, ...
+    user_course_active_num_time, ...
+    user_course_active_log_num_time ...
+);
+feat1.x3_float = cat(3, ...
+    normalize(user_course_active_num_time, user_course_num), ...
+    normalize(user_course_active_num_time, user_log_num) ...
+);
+
+feat1.y = truth_dropout;
+```
+
 The items are specified below:
 
 * Non-time-expanded
@@ -43,7 +117,7 @@ The items are specified below:
         * `enrollment_log_{object_category}_num{norm_enrollment}`(`3` × `15`): `object_category` specified below
             * `about`
             * `chapter`
-            * `combinedopenended`
+            * `combinedopenendㄘed`
             * `course`
             * `course_info`
             * `dictation`
@@ -75,7 +149,7 @@ The items are specified below:
         * `user_course_num`(`1`): number of courses taken by this user
         * `user_course_active_num{norm_user}@period`(`ACTIVE_WINDOW` × `2` × `1`): number of other active courses before, during, and after this enrollment
         * `user_course_active_log_num{norm_user}@period`(`ACTIVE_WINDOW` × `2` × `1`)
-        * `user_course_drop_num{norm_user}`(`2` × `1`): number of courses dropped by the user
+        * `user_course_drop_num{norm_user}`(`2` × `1`): number of OTHER courses dropped by the user
     * Course (`54`)
         * `course_id`(`1`): trivial, right?
         * `course_module_num`(`1`): number of modules in this course
