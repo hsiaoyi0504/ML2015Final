@@ -10,10 +10,11 @@ I am too lazy to write this...
 * `len_train_train`: `91613`, suggested training size
 * `len_train_val`: `4821`, suggested validation size
 * `len_test`: `24108`
-* `permutation`: `120542`, suggested permutation
-    * `permutation[0:len_train_train]`: suggested training set
-    * `permutation[len_train_train:len_train]`: suggested validation set
-    * `permutation[len_train:len]`: testing set
+* `perm`: `120542`, suggested permutation (1-based)
+    * `perm[0:len_train_train]`: suggested training set
+    * `perm[len_train_train:len_train]`: suggested validation set
+    * `perm[len_train:len]`: testing set
+* `eid`: `120542`, enrollment id
 * `w`: `120542`, weight in `track 2` or the inverse of number of courses taken by the user
 * `x1_int`(`120542` × `150`): Non-time-expanded
 * `x1_float`(`120542` × `66`): Non-time-expanded

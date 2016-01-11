@@ -1,9 +1,9 @@
 from os.path import isfile
 from scipy.io import loadmat, savemat
-from numpy import savetxt, concatenate, vstack, split, array, zeros, argmax
-from util import normalize, one_hot, shuffle
+from numpy import savetxt, concatenate, vstack, array, zeros, argmax
+from util import normalize, one_hot
 
-from keras.models import Graph, model_from_json
+from keras.models import Graph
 from keras.layers.core import Dense, Dropout, Reshape, Flatten, Merge
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import Adam
@@ -50,19 +50,20 @@ def load(graph, i):
 
 def feat1():
     feat = loadmat('../../data/feat1.mat')
-    feat['len_val'] = int(0.05 * feat['len_train']);
+    print feat['perm'][0:feat['len_train_train']]
+    print feat['perm'][feat['len_train_train']:feat['len_train']]
+    print feat['perm'][feat['len_train']:feat['len']]
 
     (feat['y0'], feat['y']) = one_hot(feat['y'])
     for attr in ['x1', 'x2', 'x3']:
         feat[attr] = normalize(concatenate([feat[attr + '_int'], feat[attr + '_float']], axis=len(feat[attr + '_int'].shape) - 1))
         del [feat[attr + '_int'], feat[attr + '_float']]
     for attr in ['eid', 'w', 'x1', 'x2', 'x3', 'y']:
-        (feat[attr + '_train'], feat[attr + '_test']) = split(feat[attr], array([feat['len_train']]))
+        print feat[attr].shape
+        feat[attr + '_train'] = feat[attr][feat['perm'][0:feat['len_train_train']]]
+        feat[attr + '_val']   = feat[attr][feat['perm'][feat['len_train_train']:feat['len_train']]]
+        feat[attr + '_test']  = feat[attr][feat['perm'][feat['len_train']:feat['len']]]
         del feat[attr]
-    (feat['w_train'], feat['x1_train'], feat['x2_train'], feat['x3_train'], feat['y_train']) = \
-        shuffle(feat['w_train'], feat['x1_train'], feat['x2_train'], feat['x3_train'], feat['y_train'])
-    for attr in ['w', 'x1', 'x2', 'x3', 'y']:
-        (feat[attr + '_train'], feat[attr + '_val']) = split(feat[attr + '_train'], array([feat['len_train'] - feat['len_val']]))
     
     return feat
 
