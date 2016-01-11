@@ -5,9 +5,16 @@ I am too lazy to write this...
 # `feat1` specifications
 -
 
-* `length`: `120542`
-* `length_train`: `96434`
-* `length_test`: `24108`
+* `len`: `120542`
+* `len_train`: `96434`
+* `len_train_train`: `91613`, suggested training size
+* `len_train_val`: `4821`, suggested validation size
+* `len_test`: `24108`
+* `permutation`: `120542`, suggested permutation
+    * `permutation[0:len_train_train]`: suggested training set
+    * `permutation[len_train_train:len_train]`: suggested validation set
+    * `permutation[len_train:len]`: testing set
+* `w`: `120542`, weight in `track 2` or the inverse of number of courses taken by the user
 * `x1_int`(`120542` × `150`): Non-time-expanded
 * `x1_float`(`120542` × `66`): Non-time-expanded
 * `x2_int`(`120542` × `30` × `15`): Time-expanded / Enrollment
