@@ -1,6 +1,6 @@
 from os.path import isfile
 from scipy.io import loadmat, savemat
-from numpy import savetxt, concatenate, vstack, array, zeros, argmax
+from numpy import savetxt, concatenate, hstack, array, zeros, argmax
 from util import normalize, one_hot
 
 from keras.models import Graph
@@ -19,50 +19,48 @@ def train(graph, feat, num):
                 sample_weight={'y':feat['w_train'][:, 0]}, nb_epoch=1, batch_size=256, verbose=1)
             feat['yp_val'] = g.predict({'x1':feat['x1_val'], 'x2':feat['x2_val'], 'x3':feat['x3_val']}, verbose=1)['y']
             feat['YP_val'] = argmax(feat['yp_val'], axis=1)
-            acc = sum(feat['YP_val'] == argmax(feat['y_val'], axis=1)).astype(float) / feat['len_val']
+            acc = sum(feat['YP_val'] == argmax(feat['y_val'], axis=1)).astype(float) / feat['len_train_val']
             print('val_acc: %.4f' %(acc))
 
 def test(graph, feat):
-    feat['yp_test'] = zeros([0, feat['len_test'], 1])
+    feat['yp_val'] = zeros([feat['len_train_val'], 0]) 
+    feat['yp_test'] = zeros([feat['len_test'], 0])
     for g in graphs(graph):
-        temp = g.predict({'x1':feat['x1_test'], 'x2':feat['x2_test'], 'x3':feat['x3_test']}, verbose=1)['y']
-        feat['yp_test'] = vstack([feat['yp_test'], temp[None, :, 1:2]])
+        val = g.predict({'x1':feat['x1_val'], 'x2':feat['x2_val'], 'x3':feat['x3_val']}, verbose=1)['y']
+        feat['yp_val'] = hstack([feat['yp_val'], val[:, 1:2]])
+        test = g.predict({'x1':feat['x1_test'], 'x2':feat['x2_test'], 'x3':feat['x3_test']}, verbose=1)['y']
+        feat['yp_test'] = hstack([feat['yp_test'], test[:, 1:2]])
+        result(feat)
 
 def result(feat):
-    savemat('../../result/deep_learning_keras/result_1.mat', {'eid_test':feat['eid_test'] ,'yp_test': feat['yp_test']})
-    #savetxt('../../result/deep_learning_keras/result_1_track_1.csv', vstack([feat['eid_test'][:, 0], feat['yp_test'][:, 1]]).T, fmt='%d,%.6f')
-    #savetxt('../../result/deep_learning_keras/result_1_track_2.csv', vstack([feat['eid_test'][:, 0], feat['YP_test']]).T, fmt='%d,%d')
+    savemat('../../result/deep_learning_keras/result_val.mat', {'eid_val':feat['eid_val'] ,'yp_val': feat['yp_val']})
+    savemat('../../result/deep_learning_keras/result_test.mat', {'eid_test':feat['eid_test'] ,'yp_test': feat['yp_test']})
 
 def draw(graph):
     plot(graph, to_file='graph.png')
 
-def save(graph, i):
-    name = '/home/user/Desktop/ML_final_project/graph/graph' + str(i) + '.h5'
-    graph.save_weights(name, overwrite=True)
+def path(i):
+    return '/home/user/Desktop/ML_final_project/model/deep_learning_keras/graph' + str(i) + '.h5'
 
-def check(graph, i):
-    name = '/home/user/Desktop/ML_final_project/graph/graph' + str(i) + '.h5'
-    return isfile(name)
+def save(graph, i):
+    graph.save_weights(path(i), overwrite=True)
 
 def load(graph, i):
-    name = '/home/user/Desktop/ML_final_project/graph/graph' + str(i) + '.h5'
-    graph.load_weights(name)
+    graph.load_weights(path(i))
 
 def feat1():
     feat = loadmat('../../data/feat1.mat')
-    print feat['perm'][0:feat['len_train_train']]
-    print feat['perm'][feat['len_train_train']:feat['len_train']]
-    print feat['perm'][feat['len_train']:feat['len']]
+    perm = feat['perm'][:, 0] - 1
 
     (feat['y0'], feat['y']) = one_hot(feat['y'])
     for attr in ['x1', 'x2', 'x3']:
-        feat[attr] = normalize(concatenate([feat[attr + '_int'], feat[attr + '_float']], axis=len(feat[attr + '_int'].shape) - 1))
+        feat[attr] = concatenate([feat[attr + '_int'], feat[attr + '_float']], axis=len(feat[attr + '_int'].shape) - 1)
+        feat[attr] = normalize(feat[attr])
         del [feat[attr + '_int'], feat[attr + '_float']]
     for attr in ['eid', 'w', 'x1', 'x2', 'x3', 'y']:
-        print feat[attr].shape
-        feat[attr + '_train'] = feat[attr][feat['perm'][0:feat['len_train_train']]]
-        feat[attr + '_val']   = feat[attr][feat['perm'][feat['len_train_train']:feat['len_train']]]
-        feat[attr + '_test']  = feat[attr][feat['perm'][feat['len_train']:feat['len']]]
+        feat[attr + '_train'] = feat[attr][perm[0:feat['len_train_train']]]
+        feat[attr + '_val']   = feat[attr][perm[feat['len_train_train']:feat['len_train']]]
+        feat[attr + '_test']  = feat[attr][perm[feat['len_train']:feat['len']]]
         del feat[attr]
     
     return feat
@@ -124,10 +122,10 @@ def graph1():
     return graph
 
 def graphs(graph, isSave=False, trainNum=0):
-    i = 0
+    i = 61
     while True:
         if isSave:
-            if check(graph, i):
+            if isfile(path(i)):
                 print('[ Model: %d (Exist) ]' %(i+1))
                 i += 1
                 continue
@@ -140,11 +138,12 @@ def graphs(graph, isSave=False, trainNum=0):
                 if trainNum == 0:
                     break
         else:
-            if check(graph, i):
+            if isfile(path(i)):
                 print('[ Model: %d ]' %(i+1))
                 load(graph, i)
                 i += 1
                 yield graph
+            else:
                 break
 
 if 'feat' not in locals():
@@ -153,4 +152,3 @@ if 'feat' not in locals():
 if 'graph' not in locals():
     graph = graph1()
 
-train(graph, feat, 1)
