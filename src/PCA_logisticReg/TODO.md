@@ -1,0 +1,2 @@
+- use scikit learn parallelized grid search
+- randomized in two dimension

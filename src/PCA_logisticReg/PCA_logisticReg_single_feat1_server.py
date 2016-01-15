@@ -69,6 +69,7 @@ n_folds=10
 c_list=list(range(-4,5))
 c_list[:]=[10 ** x for x in c_list]
 n_components_list=list(range(int(dimensions/2),dimensions))
+rand.shuffle(n_components)
 best_Eval_01=1
 best_Eval_abs=1
 for c in c_list:
