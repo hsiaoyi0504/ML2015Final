@@ -69,11 +69,12 @@ n_folds=10
 c_list=list(range(-4,5))
 c_list[:]=[10 ** x for x in c_list]
 n_components_list=list(range(int(dimensions/2),dimensions))
-rand.shuffle(n_components)
+rand.shuffle(n_components_list)
 best_Eval_01=1
 best_Eval_abs=1
 for c in c_list:
     for n_components in n_components_list:
+        print("starting training model for c=",c,"n_components=",n_components)
         Ein_01=[]
         Ein_abs=[]
         Eval_01=[]
@@ -101,7 +102,7 @@ for c in c_list:
             best_n_components_01=n_components
             best_c_01=c
         if sum(Eval_abs)/n_folds<best_Eval_abs:
-            best_Eval_abs=sum(Eval_01)/n_folds
+            best_Eval_abs=sum(Eval_abs)/n_folds
             best_n_components_abs=n_components
             best_c_abs=c
         print("best_Eval_01:",best_Eval_01,"best_n_components",best_n_components_01,"best_c:",best_c_01)
