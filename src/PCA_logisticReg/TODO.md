@@ -1,3 +1,4 @@
 - use scikit learn parallelized grid search
 - randomized in two dimension
 - fix a bug in PCA best Eval update
+- add Ein Eval calculation in single best feat1
