@@ -83,7 +83,7 @@ output_track1=np.transpose(output_track1)
 # In[ ]:
 
 #write predict result to file
-with open("../../result/PCA_logisticReg/temp_single_best/test_track1_v3.csv","w") as f:
+with open("../../result/PCA_logisticReg/test_track1_v3.csv","w") as f:
     w=csv.writer(f)
     w.writerows(output_track1)
     f.close()
@@ -106,7 +106,7 @@ output_track2=np.transpose(output_track2)
 
 # In[ ]:
 
-with open("../../result/PCA_logisticReg/temp_single_best/test_track2_v3.csv","w") as f:
+with open("../../result/PCA_logisticReg/test_track2_v3.csv","w") as f:
     w=csv.writer(f)
     w.writerows(output_track2)
     f.close()
