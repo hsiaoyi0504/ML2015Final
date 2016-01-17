@@ -63,8 +63,8 @@ x_test=x_test[len_train:][:]
 best_c_abs=100
 best_n_components_abs=122
 
-best_c_01=10000
-best_n_components_01=184
+best_c_01=100
+best_n_components_01=125
 
 #training(track 1)
 pca = PCA(n_components=best_n_components_abs)
@@ -83,7 +83,7 @@ output_track1=np.transpose(output_track1)
 # In[ ]:
 
 #write predict result to file
-with open("../../result/PCA_logisticReg/test_track1_v3.csv","w") as f:
+with open("../../result/PCA_logisticReg/temp_single_best/test_track1_v3.csv","w") as f:
     w=csv.writer(f)
     w.writerows(output_track1)
     f.close()
@@ -106,7 +106,7 @@ output_track2=np.transpose(output_track2)
 
 # In[ ]:
 
-with open("../../result/PCA_logisticReg/test_track2_v3.csv","w") as f:
+with open("../../result/PCA_logisticReg/temp_single_best/test_track2_v3.csv","w") as f:
     w=csv.writer(f)
     w.writerows(output_track2)
     f.close()
