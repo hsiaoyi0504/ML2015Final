@@ -9,18 +9,21 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import Adam
 from keras.utils.visualize_util import plot
 
-def train(graph, feat, num):
-    nb_epoch = 5
+def train(graph, feat, num, nb_epoch):
+    history = []
     for g in graphs(graph, isSave=True, trainNum=num):
         for j in range(nb_epoch):
             print('Epoch: %d / %d' %(j+1, nb_epoch))
-            g.fit({'x1':feat['x1_train'], 'x2':feat['x2_train'], 'x3':feat['x3_train'], 'y':feat['y_train']},
+            h = g.fit({'x1':feat['x1_train'], 'x2':feat['x2_train'], 'x3':feat['x3_train'], 'y':feat['y_train']},
                 validation_data={'x1':feat['x1_val'], 'x2':feat['x2_val'], 'x3':feat['x3_val'], 'y':feat['y_val']}, 
                 sample_weight={'y':feat['w_train'][:, 0]}, nb_epoch=1, batch_size=256, verbose=1)
             feat['yp_val'] = g.predict({'x1':feat['x1_val'], 'x2':feat['x2_val'], 'x3':feat['x3_val']}, verbose=1)['y']
             feat['YP_val'] = argmax(feat['yp_val'], axis=1)
             acc = sum(feat['YP_val'] == argmax(feat['y_val'], axis=1)).astype(float) / feat['len_train_val']
+            history.append(h)
             print('val_acc: %.4f' %(acc))
+    return history
+
 
 def test(graph, feat):
     feat['yp_val'] = zeros([feat['len_train_val'], 0]) 

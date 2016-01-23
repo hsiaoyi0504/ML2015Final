@@ -1,0 +1,43 @@
+\begin{thebibliography}{1}
+
+\bibitem{jolliffe2002principal}
+I.~Jolliffe, {\em Principal component analysis}.
+\newblock Wiley Online Library, 2002.
+
+\bibitem{pedregosa2011scikit}
+F.~Pedregosa, G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
+  M.~Blondel, P.~Prettenhofer, R.~Weiss, V.~Dubourg, {\em et~al.},
+  ``Scikit-learn: Machine learning in python,'' {\em The Journal of Machine
+  Learning Research}, vol.~12, pp.~2825--2830, 2011.
+
+\bibitem{chang2011libsvm}
+C.-C. Chang and C.-J. Lin, ``Libsvm: A library for support vector machines,''
+  {\em ACM Transactions on Intelligent Systems and Technology (TIST)}, vol.~2,
+  no.~3, p.~27, 2011.
+
+\bibitem{lewis2000introduction}
+R.~J. Lewis, ``An introduction to classification and regression tree (cart)
+  analysis,'' in {\em Annual Meeting of the Society for Academic Emergency
+  Medicine in San Francisco, California}, pp.~1--14, 2000.
+
+\bibitem{lecun1989backpropagation}
+Y.~LeCun, B.~Boser, J.~S. Denker, D.~Henderson, R.~E. Howard, W.~Hubbard, and
+  L.~D. Jackel, ``Backpropagation applied to handwritten zip code
+  recognition,'' {\em Neural computation}, vol.~1, no.~4, pp.~541--551, 1989.
+
+\bibitem{abaditensorflow}
+M.~Abadi, A.~Agarwal, P.~Barham, E.~Brevdo, Z.~Chen, C.~Citro, G.~S. Corrado,
+  A.~Davis, J.~Dean, M.~Devin, {\em et~al.}, ``Tensorflow: Large-scale machine
+  learning on heterogeneous systems, 2015,'' {\em Software available from
+  tensorflow. org}.
+
+\bibitem{szegedy2014going}
+C.~Szegedy, W.~Liu, Y.~Jia, P.~Sermanet, S.~Reed, D.~Anguelov, D.~Erhan,
+  V.~Vanhoucke, and A.~Rabinovich, ``Going deeper with convolutions,'' {\em
+  arXiv preprint arXiv:1409.4842}, 2014.
+
+\bibitem{kingma2014adam}
+D.~Kingma and J.~Ba, ``Adam: A method for stochastic optimization,'' {\em arXiv
+  preprint arXiv:1412.6980}, 2014.
+
+\end{thebibliography}
