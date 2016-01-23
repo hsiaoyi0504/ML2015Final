@@ -35,6 +35,7 @@ clear lg_source_one_hot lg_event_one_hot;
     
 lg_module_category = zeros(lg.length, 1);
 lg_module_exist_category = object.category_id(lg_module_exist_index);
+return
 [category, ~, lg_module_category(lg_module_exist)] = unique(lg_module_exist_category);
 lg_object_category_one_hot = bsxfun(@eq, lg_module_category, 1:length(category));
 clear lg_module_category lg_module_exist_category;

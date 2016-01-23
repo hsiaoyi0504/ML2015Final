@@ -18,13 +18,16 @@ def one_hot(x):
     return (x0, (x == x0).astype(float))
 
 def train(model, feat, nb_epoch):
+    history = []
     for epoch in range(nb_epoch):
-        model.fit({'yp':feat['yp_val_train'], 'y':feat['y_val_train']}, 
+        h = model.fit({'yp':feat['yp_val_train'], 'y':feat['y_val_train']}, 
             validation_data={'yp':feat['yp_val_val'], 'y':feat['y_val_val']}, 
             nb_epoch=1, batch_size=feat['len_train_val_train'], verbose=1)
+        history.append(h)
         feat['yp_val_val_ult'] = model.predict({'yp':feat['yp_val_val']})['y']
         acc = sum(argmax(feat['yp_val_val_ult'], axis=1) == argmax(feat['y_val_val'], axis=1)).astype(float) / feat['len_train_val_val'][0][0]
         print('Epoch %d, val_acc: %.4f' %(epoch, acc))
+    return history
  
 def test(model, feat):
     feat['yp_test_ult'] = model.predict({'yp':feat['yp_test']})['y'][:, 1:2]
@@ -92,7 +95,7 @@ def model_ensemble(feat, ensemble_num):
     return graph
 
 if 'feat' not in locals():
-    val_train_ratio = 0.999
+    val_train_ratio = 0.5
     ensemble_num = 1
     feat = feat_blend(val_train_ratio)
     model = model_ensemble(feat, ensemble_num)
